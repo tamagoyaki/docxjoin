@@ -1,21 +1,49 @@
 Sub docxjoin()
-　Dim doc_name As String
+  ' select a filelist
+  Set fd = Application.FileDialog(msoFileDialogOpen)
+  With fd
+    .AllowMultiSelect = False
+    .InitialFileName = "C:"
+    .Filters.Add "Word doc list", "*.docxlist", 1
+    If .Show <> -1 Then Exit Sub
+  End With
 
-　Documents.Add
+  ' read filelist
+  Set filelist = CreateObject("Scripting.FileSystemObject").OpenTextFile(fd.SelectedItems.Item(1), 1)
 
-　ChDir "C:\Users\kiyotoito\Desktop"
+  ' regex for filelist
+  Set regx_comment = CreateObject("vbscript.regexp")
+  With regx_comment
+     .Global = True
+     .Pattern = "^#.*$"
+  End With
+  
+  Set regx_empty = CreateObject("vbscript.regexp")
+  With regx_empty
+     .Global = True
+     .Pattern = "^ *$"
+  End With
 
-　doc_name = Dir("*.doc*")
+  ' join docx
+  Do While filelist.AtEndOfStream <> True
+    file = filelist.ReadLine
 
-　Do While doc_name <> ""
+    ' ignore the line if it's a comment or emply
+    comment_found = regx_comment.test(file)
+    empty_found = regx_empty.test(file)
+
+    If comment_found Or empty_found = True Then
+       GoTo CONTINUE
+    End If
+
+    ' insert
 　　With Selection
-　　　.TypeText "ファイル名 = " & doc_name & vbCr
-　　　.InsertBreak wdPageBreak
-　　　.InsertFile doc_name
+　　　.InsertFile file
 　　　.InsertBreak wdSectionBreakNextPage
 　　　.Collapse wdCollapseEnd
 　　End With
-　　doc_name = Dir
-　Loop
+CONTINUE:
+  Loop
+filelist.Close
 
 End Sub
